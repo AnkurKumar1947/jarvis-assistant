@@ -416,7 +416,24 @@ export type ErrorCode =
 // System Metrics Types (Web specific)
 // ============================================================================
 
+/**
+ * Simple flat metrics structure used by the metrics service
+ * This format is consumed directly by the frontend
+ */
 export interface SystemMetrics {
+  cpu: number;           // CPU usage percentage (0-100)
+  ram: number;           // RAM usage percentage (0-100)
+  disk: number;          // Disk usage percentage (0-100)
+  battery: number;       // Battery level (0-100)
+  isCharging: boolean;   // Whether device is charging
+  isOnline: boolean;     // Network connectivity status
+  uptime: number;        // Process uptime in seconds
+}
+
+/**
+ * Detailed metrics structure (for future use)
+ */
+export interface DetailedSystemMetrics {
   cpu: {
     usage: number;
     temperature?: number;

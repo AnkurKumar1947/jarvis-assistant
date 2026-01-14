@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { connectSocket, getSocket, SOCKET_EVENTS } from '@/lib/socket';
 
 // Types
-type AssistantState = 'idle' | 'listening' | 'processing' | 'thinking' | 'speaking' | 'executing';
+type AssistantState = 'idle' | 'listening' | 'processing' | 'thinking' | 'speaking' | 'executing' | 'initializing';
 
 interface Message {
   id: string;
