@@ -10,12 +10,14 @@
     "timeout": 30000
   },
   "tts": {
-    "voice": "nova",
+    "voice": "adam",
     "rate": 1.0,
     "enabled": true,
-    "openai": {
-      "model": "tts-1",
-      "defaultVoice": "nova"
+    "elevenlabs": {
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "modelId": "eleven_monolingual_v1",
+      "stability": 0.5,
+      "similarityBoost": 0.75
     }
   },
   "audio": {

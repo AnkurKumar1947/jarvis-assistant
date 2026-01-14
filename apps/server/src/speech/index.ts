@@ -3,7 +3,7 @@
  * Exports speech synthesis and transcription functionality
  */
 
-// Synthesizer (TTS - OpenAI)
+// Synthesizer (TTS - ElevenLabs)
 export { SpeechSynthesizer, synthesizer } from './synthesizer.js';
 
 // Transcriber (STT)
@@ -11,7 +11,7 @@ export { SpeechTranscriber, getTranscriber, transcribeAudio } from './transcribe
 export type { WhisperModel } from './transcriber.js';
 
 // Provider
-export { OpenAIProvider } from './providers/index.js';
+export { ElevenLabsProvider, ELEVENLABS_VOICES } from './providers/index.js';
 
 // Re-export types
 export type { 

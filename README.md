@@ -7,7 +7,7 @@ A personal AI assistant with a modern web UI, inspired by Iron Man's Jarvis.
 - 🌐 **Web UI** - Beautiful dark-mode dashboard with real-time updates
 - 🎤 **Voice Input** - Browser-based voice commands
 - ⌨️ **Text Input** - Chat interface for typing commands
-- 🔊 **OpenAI TTS** - High-quality cloud-based text-to-speech (6 voices)
+- 🔊 **ElevenLabs TTS** - High-quality cloud-based text-to-speech (8 voices)
 - 📊 **System Metrics** - Real-time CPU, RAM, disk, battery monitoring
 - 📹 **Camera Feed** - Live camera display
 - 🤖 **AI Integration** - Ollama LLM for intelligent responses
@@ -18,8 +18,8 @@ A personal AI assistant with a modern web UI, inspired by Iron Man's Jarvis.
 # 1. Setup environment
 make setup-env
 
-# 2. Add your OpenAI API key to .env
-# Edit .env and replace sk-proj-your-key-here with your actual key
+# 2. Add your ElevenLabs API key to .env
+# Edit .env and replace your-elevenlabs-api-key with your actual key
 
 # 3. Start the assistant
 make
@@ -30,17 +30,18 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 📋 Requirements
 
 - **Node.js 18+**
-- **OpenAI API Key** (for TTS) - [Get one here](https://platform.openai.com/api-keys)
+- **ElevenLabs API Key** (free tier: 10K chars/month) - [Get one here](https://elevenlabs.io)
 - **Ollama** (optional, for AI responses): `brew install ollama`
 
-## 🔑 Setup OpenAI API Key
+## 🔑 Setup ElevenLabs API Key
 
-1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Create a new API key
-3. Add it to your `.env` file:
+1. Go to [elevenlabs.io](https://elevenlabs.io) and sign up (free)
+2. Click your profile icon → **Profile**
+3. Copy your **API Key**
+4. Add it to your `.env` file:
 
 ```bash
-OPENAI_API_KEY=sk-proj-your-actual-key-here
+ELEVENLABS_API_KEY=your-actual-api-key-here
 ```
 
 ## 🏗️ Project Structure
@@ -56,7 +57,7 @@ jarvis-assistant/
 │   │   │   ├── routes/         # REST API
 │   │   │   ├── services/       # Assistant, metrics
 │   │   │   ├── socket/         # WebSocket handlers
-│   │   │   ├── speech/         # OpenAI TTS
+│   │   │   ├── speech/         # ElevenLabs TTS
 │   │   │   ├── utils/          # Logger, macOS helpers
 │   │   │   └── index.ts        # Entry point
 │   │   └── config/
@@ -106,37 +107,36 @@ jarvis-assistant/
 | `calculate 15 * 8` | Math operations |
 | `help` | Show all commands |
 
-## 🎙️ OpenAI TTS Voices
+## 🎙️ ElevenLabs TTS Voices
 
-Jarvis uses OpenAI's text-to-speech API with 6 available voices:
+Jarvis uses ElevenLabs' text-to-speech API with 8 available voices:
 
-| Voice | Gender | Description |
-|-------|--------|-------------|
-| **nova** ⭐ | Female | Friendly and upbeat (default) |
-| alloy | Female | Neutral and balanced |
-| echo | Male | Warm and conversational |
-| fable | Male | Expressive and dramatic |
-| onyx | Male | Deep and authoritative |
-| shimmer | Female | Clear and gentle |
+| Voice | Gender | Style |
+|-------|--------|-------|
+| **adam** ⭐ | Male | Deep, authoritative (default - Jarvis-like) |
+| rachel | Female | Calm, narrative |
+| antoni | Male | Warm, friendly |
+| elli | Female | Young, cheerful |
+| josh | Male | Energetic |
+| arnold | Male | Crisp, clear |
+| domi | Female | Strong, confident |
+| bella | Female | Soft, gentle |
 
 ### TTS Configuration
 
 Edit `.env` to change voice settings:
 
 ```bash
-TTS_VOICE=nova          # Voice: alloy, echo, fable, onyx, nova, shimmer
-TTS_MODEL=tts-1         # Model: tts-1 (faster) or tts-1-hd (higher quality)
-TTS_RATE=1.0            # Speed: 0.25 to 4.0
+TTS_VOICE=adam                    # Voice name
+TTS_STABILITY=0.5                 # 0-1 (lower = more expressive)
+TTS_SIMILARITY_BOOST=0.75         # 0-1 (higher = more consistent)
 ```
 
-### TTS Pricing
+### Free Tier
 
-| Model | Cost |
-|-------|------|
-| tts-1 (Standard) | $0.015 / 1,000 characters |
-| tts-1-hd (HD) | $0.030 / 1,000 characters |
-
-**Example**: 1000 assistant responses averaging 100 characters = ~$1.50
+- **10,000 characters/month** free
+- ~100 short assistant responses
+- Upgrade for more at [elevenlabs.io/pricing](https://elevenlabs.io/pricing)
 
 ## ⚙️ Configuration
 
@@ -153,12 +153,14 @@ Edit `apps/server/config/default.json`:
     "model": "llama3.2:3b"
   },
   "tts": {
-    "voice": "nova",
+    "voice": "adam",
     "rate": 1.0,
     "enabled": true,
-    "openai": {
-      "model": "tts-1",
-      "defaultVoice": "nova"
+    "elevenlabs": {
+      "voiceId": "pNInz6obpgDQGcFmaJgB",
+      "modelId": "eleven_monolingual_v1",
+      "stability": 0.5,
+      "similarityBoost": 0.75
     }
   }
 }
@@ -207,7 +209,7 @@ make clean        # Clean node_modules
 - [x] Socket.io communication
 - [x] System metrics monitoring
 - [x] LLM integration (Ollama)
-- [x] OpenAI TTS
+- [x] ElevenLabs TTS
 - [ ] Voice input in browser
 - [ ] Camera processing/analysis
 - [ ] Smart home integration

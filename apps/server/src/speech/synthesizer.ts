@@ -1,69 +1,74 @@
 /**
- * Speech Synthesizer - OpenAI TTS
+ * Speech Synthesizer - ElevenLabs TTS
  * High-quality cloud-based text-to-speech
+ * Free tier: 10,000 characters/month
  */
 
 import { logger } from '../utils/logger.js';
-import { OpenAIProvider } from './providers/openaiProvider.js';
+import { ElevenLabsProvider, ELEVENLABS_VOICES } from './providers/elevenLabsProvider.js';
 import type { 
   TTSConfig, 
   VoiceInfo,
 } from '../core/types.js';
 
 /**
- * Speech Synthesizer class using OpenAI TTS
+ * Speech Synthesizer class using ElevenLabs TTS
  */
 export class SpeechSynthesizer {
-  private provider: OpenAIProvider | null = null;
+  private provider: ElevenLabsProvider | null = null;
   private enabled: boolean;
   private ttsConfig: TTSConfig;
 
   constructor(config?: Partial<TTSConfig>) {
     // Default config
     this.ttsConfig = {
-      voice: config?.voice ?? 'nova',
+      voice: config?.voice ?? 'adam',
       rate: config?.rate ?? 1.0,
       enabled: config?.enabled ?? true,
-      openai: config?.openai ?? {
-        apiKey: process.env.OPENAI_API_KEY ?? '',
-        model: 'tts-1',
-        defaultVoice: 'nova',
+      elevenlabs: config?.elevenlabs ?? {
+        apiKey: process.env.ELEVENLABS_API_KEY ?? '',
+        voiceId: ELEVENLABS_VOICES.adam.id,
+        modelId: 'eleven_monolingual_v1',
+        stability: 0.5,
+        similarityBoost: 0.75,
       },
     };
 
     this.enabled = this.ttsConfig.enabled;
 
-    // Initialize OpenAI provider
+    // Initialize ElevenLabs provider
     this.initializeProvider();
   }
 
   /**
-   * Initialize OpenAI TTS provider
+   * Initialize ElevenLabs TTS provider
    */
   private initializeProvider(): void {
-    if (!this.ttsConfig.openai?.apiKey) {
-      logger.warn('⚠️ OpenAI API key not configured - TTS disabled');
-      logger.warn('  Set OPENAI_API_KEY in your .env file');
+    if (!this.ttsConfig.elevenlabs?.apiKey) {
+      logger.warn('⚠️ ElevenLabs API key not configured - TTS disabled');
+      logger.warn('  Set ELEVENLABS_API_KEY in your .env file');
       this.provider = null;
       return;
     }
 
     try {
-      this.provider = new OpenAIProvider({
-        apiKey: this.ttsConfig.openai.apiKey,
-        model: this.ttsConfig.openai.model,
-        defaultVoice: this.ttsConfig.openai.defaultVoice,
+      this.provider = new ElevenLabsProvider({
+        apiKey: this.ttsConfig.elevenlabs.apiKey,
+        voiceId: this.ttsConfig.elevenlabs.voiceId,
+        modelId: this.ttsConfig.elevenlabs.modelId,
+        stability: this.ttsConfig.elevenlabs.stability,
+        similarityBoost: this.ttsConfig.elevenlabs.similarityBoost,
       });
 
       if (this.provider.isAvailable) {
-        logger.info('🎙️ TTS Provider: OpenAI (cloud)');
+        logger.info('🎙️ TTS Provider: ElevenLabs (cloud)');
         this.applySettings();
       } else {
-        logger.warn('⚠️ OpenAI TTS not available - check API key');
+        logger.warn('⚠️ ElevenLabs TTS not available - check API key');
         this.provider = null;
       }
     } catch (error) {
-      logger.error('Failed to initialize OpenAI provider:', error);
+      logger.error('Failed to initialize ElevenLabs provider:', error);
       this.provider = null;
     }
   }
@@ -86,7 +91,7 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Speak text using OpenAI TTS
+   * Speak text using ElevenLabs TTS
    */
   async speak(text: string): Promise<void> {
     if (!this.enabled) {
@@ -100,7 +105,7 @@ export class SpeechSynthesizer {
     }
 
     if (!this.provider) {
-      logger.warn('No TTS provider available - set OPENAI_API_KEY');
+      logger.warn('No TTS provider available - set ELEVENLABS_API_KEY');
       return;
     }
 
@@ -133,7 +138,7 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set voice (alloy, echo, fable, onyx, nova, shimmer)
+   * Set voice by name (rachel, adam, etc.) or ID
    */
   setVoice(voice: string): void {
     this.ttsConfig.voice = voice;
@@ -149,10 +154,10 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set speaking rate (0.25-4.0, where 1.0 is normal)
+   * Set speaking rate (0.5-2.0, maps to stability)
    */
   setRate(rate: number): void {
-    this.ttsConfig.rate = Math.max(0.25, Math.min(4.0, rate));
+    this.ttsConfig.rate = Math.max(0.5, Math.min(2.0, rate));
     this.provider?.setRate(this.ttsConfig.rate);
     logger.debug(`Speaking rate set to: ${this.ttsConfig.rate}`);
   }
@@ -181,7 +186,7 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Check if OpenAI is available
+   * Check if ElevenLabs is available
    */
   isAvailable(): boolean {
     return this.provider?.isAvailable ?? false;
@@ -213,7 +218,7 @@ export class SpeechSynthesizer {
     if (this.provider?.isAvailable) {
       await this.provider.testVoice(voice, rate, text);
     } else {
-      logger.warn('Cannot test voice - OpenAI not available');
+      logger.warn('Cannot test voice - ElevenLabs not available');
     }
   }
 

@@ -121,17 +121,21 @@ setup-env: ## Create .env file from template
 	@if [ ! -f .env ]; then \
 		echo "# JARVIS Assistant Configuration" > .env; \
 		echo "" >> .env; \
-		echo "# OpenAI API Key (Required for TTS)" >> .env; \
-		echo "OPENAI_API_KEY=sk-proj-your-key-here" >> .env; \
+		echo "# ElevenLabs API Key (Required for TTS)" >> .env; \
+		echo "# Get your key from: https://elevenlabs.io → Profile → API Keys" >> .env; \
+		echo "# Free tier: 10,000 characters/month" >> .env; \
+		echo "ELEVENLABS_API_KEY=your-elevenlabs-api-key" >> .env; \
 		echo "" >> .env; \
 		echo "# TTS Configuration" >> .env; \
-		echo "TTS_VOICE=nova" >> .env; \
-		echo "TTS_MODEL=tts-1" >> .env; \
+		echo "# Voices: rachel, adam, antoni, elli, josh, arnold, domi, bella" >> .env; \
+		echo "TTS_VOICE=adam" >> .env; \
+		echo "TTS_STABILITY=0.5" >> .env; \
+		echo "TTS_SIMILARITY_BOOST=0.75" >> .env; \
 		echo "" >> .env; \
 		echo "# Server Configuration" >> .env; \
 		echo "PORT=3001" >> .env; \
 		echo "NODE_ENV=development" >> .env; \
-		echo "✅ Created .env file - add your OPENAI_API_KEY"; \
+		echo "✅ Created .env file - add your ELEVENLABS_API_KEY"; \
 	else \
 		echo "⚠️  .env file already exists"; \
 	fi
@@ -141,8 +145,8 @@ check-env: ## Check if .env is configured
 		echo "⚠️  No .env file found. Run 'make setup-env' first"; \
 		exit 1; \
 	fi
-	@if ! grep -q "OPENAI_API_KEY=sk-" .env 2>/dev/null || grep -q "your-key-here" .env 2>/dev/null; then \
-		echo "⚠️  OPENAI_API_KEY not configured in .env"; \
+	@if grep -q "your-elevenlabs-api-key" .env 2>/dev/null; then \
+		echo "⚠️  ELEVENLABS_API_KEY not configured in .env"; \
 		echo "   TTS will be disabled until you add your API key"; \
 	fi
 
@@ -159,14 +163,14 @@ check: ## Check system requirements
 	@echo ""
 	@echo "📋 Environment:"
 	@if [ -f .env ]; then \
-		echo "  .env file: ✅ exists"; \
-		if grep -q "OPENAI_API_KEY=sk-" .env 2>/dev/null && ! grep -q "your-key-here" .env 2>/dev/null; then \
-			echo "  OpenAI:    ✅ configured"; \
+		echo "  .env file:   ✅ exists"; \
+		if grep -q "ELEVENLABS_API_KEY=" .env 2>/dev/null && ! grep -q "your-elevenlabs-api-key" .env 2>/dev/null; then \
+			echo "  ElevenLabs:  ✅ configured"; \
 		else \
-			echo "  OpenAI:    ⚠️  not configured"; \
+			echo "  ElevenLabs:  ⚠️  not configured"; \
 		fi \
 	else \
-		echo "  .env file: ❌ missing (run 'make setup-env')"; \
+		echo "  .env file:   ❌ missing (run 'make setup-env')"; \
 	fi
 	@echo ""
 
@@ -210,7 +214,7 @@ help: ## Show this help message
 	@echo "╔═══════════════════════════════════════════════════════════════╗"
 	@echo "║                    🤖 JARVIS ASSISTANT                        ║"
 	@echo "╠═══════════════════════════════════════════════════════════════╣"
-	@echo "║  TTS: OpenAI (cloud-based, requires API key)                 ║"
+	@echo "║  TTS: ElevenLabs (10K chars/month free)                      ║"
 	@echo "╚═══════════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "Commands:"

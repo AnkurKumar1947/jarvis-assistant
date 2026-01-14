@@ -49,13 +49,15 @@ const DEFAULT_CONFIG: AssistantConfig = {
     timeout: 30000,
   },
   tts: {
-    voice: 'nova',
+    voice: 'adam',
     rate: 1.0,
     enabled: true,
-    openai: {
-      apiKey: process.env.OPENAI_API_KEY ?? '',
-      model: 'tts-1',
-      defaultVoice: 'nova',
+    elevenlabs: {
+      apiKey: process.env.ELEVENLABS_API_KEY ?? '',
+      voiceId: 'pNInz6obpgDQGcFmaJgB', // Adam - deep authoritative voice
+      modelId: 'eleven_monolingual_v1',
+      stability: 0.5,
+      similarityBoost: 0.75,
     },
   },
   audio: {
@@ -148,10 +150,12 @@ function applyEnvOverrides(config: AssistantConfig): AssistantConfig {
       voice: getEnv('TTS_VOICE') ?? config.tts.voice,
       rate: getEnvFloat('TTS_RATE') ?? config.tts.rate,
       enabled: getEnvBoolean('TTS_ENABLED') ?? config.tts.enabled,
-      openai: {
-        apiKey: getEnv('OPENAI_API_KEY') ?? config.tts.openai?.apiKey ?? '',
-        model: (getEnv('TTS_MODEL') as 'tts-1' | 'tts-1-hd') ?? config.tts.openai?.model ?? 'tts-1',
-        defaultVoice: (getEnv('TTS_VOICE') as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer') ?? config.tts.openai?.defaultVoice ?? 'nova',
+      elevenlabs: {
+        apiKey: getEnv('ELEVENLABS_API_KEY') ?? config.tts.elevenlabs?.apiKey ?? '',
+        voiceId: getEnv('TTS_VOICE_ID') ?? config.tts.elevenlabs?.voiceId ?? 'pNInz6obpgDQGcFmaJgB',
+        modelId: (getEnv('TTS_MODEL') as 'eleven_monolingual_v1' | 'eleven_multilingual_v2' | 'eleven_turbo_v2') ?? config.tts.elevenlabs?.modelId ?? 'eleven_monolingual_v1',
+        stability: getEnvFloat('TTS_STABILITY') ?? config.tts.elevenlabs?.stability ?? 0.5,
+        similarityBoost: getEnvFloat('TTS_SIMILARITY_BOOST') ?? config.tts.elevenlabs?.similarityBoost ?? 0.75,
       },
     },
     audio: {
@@ -218,16 +222,17 @@ function validateConfig(config: AssistantConfig): void {
     throw new Error('Wake word is required');
   }
 
-  // TTS rate validation - OpenAI uses 0.25-4.0
+  // TTS rate validation - maps to stability (0.5-1.5 reasonable range)
   const rate = config.tts.rate;
-  if (rate < 0.25 || rate > 4.0) {
-    throw new Error('TTS rate must be between 0.25 and 4.0');
+  if (rate < 0.5 || rate > 2.0) {
+    throw new Error('TTS rate must be between 0.5 and 2.0');
   }
 
-  // TTS voice validation
-  const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
-  if (!validVoices.includes(config.tts.voice)) {
-    throw new Error(`TTS voice must be one of: ${validVoices.join(', ')}`);
+  // TTS voice validation (ElevenLabs voices)
+  const validVoices = ['rachel', 'adam', 'antoni', 'elli', 'josh', 'arnold', 'domi', 'bella'];
+  if (!validVoices.includes(config.tts.voice.toLowerCase())) {
+    // Allow custom voice IDs - just log a warning
+    console.log(`Note: Using custom voice "${config.tts.voice}"`);
   }
 
   if (config.audio.sampleRate < 8000 || config.audio.sampleRate > 48000) {

@@ -105,7 +105,7 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
   // Voice Settings Routes
   // ============================================================================
 
-  // GET /api/voices - Get all available OpenAI voices
+  // GET /api/voices - Get all available ElevenLabs voices
   router.get('/voices', async (req, res) => {
     try {
       const voices = await assistantService.getAvailableVoices();
@@ -179,10 +179,10 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
         config.tts.voice = voice;
       }
 
-      // Update rate (OpenAI supports 0.25-4.0)
+      // Update rate (ElevenLabs maps to stability 0.5-2.0)
       if (rate !== undefined) {
-        if (rate < 0.25 || rate > 4.0) {
-          res.status(400).json({ error: 'Rate must be between 0.25 and 4.0' });
+        if (rate < 0.5 || rate > 2.0) {
+          res.status(400).json({ error: 'Rate must be between 0.5 and 2.0' });
           return;
         }
         assistantService.setRate(rate);

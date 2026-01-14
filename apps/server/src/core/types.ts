@@ -40,36 +40,38 @@ export interface AssistantConfig {
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 // ============================================================================
-// TTS Provider Types (OpenAI Only)
+// TTS Provider Types (ElevenLabs)
 // ============================================================================
 
 /**
- * OpenAI TTS voice options
+ * ElevenLabs voice names
  */
-export type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+export type ElevenLabsVoice = 'rachel' | 'adam' | 'antoni' | 'elli' | 'josh' | 'arnold' | 'domi' | 'bella';
 
 /**
- * OpenAI TTS model options
+ * ElevenLabs model options
  */
-export type OpenAIModel = 'tts-1' | 'tts-1-hd';
+export type ElevenLabsModel = 'eleven_monolingual_v1' | 'eleven_multilingual_v2' | 'eleven_turbo_v2';
 
 /**
- * TTS configuration (OpenAI)
+ * TTS configuration (ElevenLabs)
  */
 export interface TTSConfig {
   voice: string;
   rate: number;
   enabled: boolean;
-  openai?: OpenAIConfig;
+  elevenlabs?: ElevenLabsConfig;
 }
 
 /**
- * OpenAI TTS specific configuration
+ * ElevenLabs TTS specific configuration
  */
-export interface OpenAIConfig {
+export interface ElevenLabsConfig {
   apiKey: string;
-  model: OpenAIModel;
-  defaultVoice: OpenAIVoice;
+  voiceId: string;
+  modelId: ElevenLabsModel;
+  stability: number;        // 0-1, lower = more expressive
+  similarityBoost: number;  // 0-1, higher = more consistent
 }
 
 /**
@@ -81,7 +83,7 @@ export interface VoiceInfo {
   language: string;
   country: string;
   gender: 'male' | 'female' | 'unknown';
-  provider: 'openai';
+  provider: 'elevenlabs';
   quality?: 'low' | 'medium' | 'high';
   description?: string;
 }
@@ -90,7 +92,7 @@ export interface VoiceInfo {
  * TTS Provider interface
  */
 export interface TTSProviderInterface {
-  readonly name: 'openai';
+  readonly name: 'elevenlabs';
   readonly isAvailable: boolean;
   
   speak(text: string): Promise<void>;

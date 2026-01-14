@@ -1,9 +1,9 @@
 /**
  * TTS Providers Index
- * Exports OpenAI TTS provider implementation
+ * Exports ElevenLabs TTS provider implementation
  */
 
-export { OpenAIProvider } from './openaiProvider.js';
+export { ElevenLabsProvider, ELEVENLABS_VOICES } from './elevenLabsProvider.js';
 
 // Re-export types
 export type { TTSProviderInterface, VoiceInfo } from '../../core/types.js';

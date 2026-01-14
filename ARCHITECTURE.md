@@ -22,7 +22,7 @@ Jarvis is an AI voice assistant built with a modern monorepo structure. It consi
 │   ┌─────────────────────┐                              ┌─────────────────┐  │
 │   │   Browser APIs      │                              │  External APIs  │  │
 │   │   • Camera          │                              │  • Ollama LLM   │  │
-│   │   • Microphone      │                              │  • OpenAI TTS   │  │
+│   │   • Microphone      │                              │  • ElevenLabs   │  │
 │   │   • Web Audio       │                              │  • macOS System │  │
 │   └─────────────────────┘                              └─────────────────┘  │
 │                                                                             │
@@ -75,7 +75,7 @@ Jarvis is an AI voice assistant built with a modern monorepo structure. It consi
               │              ▼               │
               │  ┌────────────────────────┐  │
               │  │   Speech Synthesizer   │  │
-              │  │     (OpenAI TTS)       │  │
+              │  │    (ElevenLabs TTS)    │  │
               │  └────────────────────────┘  │
               └──────────────┬───────────────┘
                              │
@@ -94,62 +94,13 @@ Jarvis is an AI voice assistant built with a modern monorepo structure. It consi
 
 ---
 
-## Frontend Architecture (apps/web)
-
-### Tech Stack
-- **Framework**: Next.js 14 (App Router)
-- **UI**: React 18 + Tailwind CSS + shadcn/ui
-- **State**: Zustand stores
-- **Real-time**: Socket.io client
-- **Styling**: CSS Variables for theming
-
-### Component Structure
-
-```
-apps/web/
-├── app/                        # Next.js App Router
-│   ├── layout.tsx              # Root layout with providers
-│   ├── page.tsx                # Main dashboard (entry point)
-│   ├── globals.css             # Global styles + theme variables
-│   └── providers.tsx           # Context providers wrapper
-│
-├── components/
-│   ├── assistant/              # 🤖 Assistant Panel
-│   │   ├── AssistantAvatar.tsx    # Animated avatar
-│   │   ├── AssistantView.tsx      # Main assistant display
-│   │   ├── ControlButtons.tsx     # Voice/mute controls
-│   │   └── StateIndicator.tsx     # Current state badge
-│   │
-│   ├── chat/                   # 💬 Chat Interface
-│   │   ├── ChatPanel.tsx          # Main chat container
-│   │   ├── ChatInput.tsx          # Message input
-│   │   └── MessageList.tsx        # Message history
-│   │
-│   ├── metrics/                # 📊 System Metrics
-│   │   ├── SystemMetrics.tsx      # Metrics grid
-│   │   └── MetricCard.tsx         # Individual metric
-│   │
-│   └── ui/                     # 🎨 Base Components (shadcn)
-│
-├── hooks/                      # Custom React Hooks
-│   ├── useSocket.ts               # WebSocket connection
-│   ├── useAssistant.ts            # Assistant state
-│   └── useMetrics.ts              # System metrics
-│
-└── stores/                     # Zustand State Stores
-    ├── assistantStore.ts
-    └── chatStore.ts
-```
-
----
-
 ## Backend Architecture (apps/server)
 
 ### Tech Stack
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Real-time**: Socket.io
-- **TTS**: OpenAI TTS API
+- **TTS**: ElevenLabs API
 - **LLM**: Ollama (local)
 
 ### Module Structure
@@ -189,7 +140,7 @@ apps/server/
 │   ├── speech/                 # 🔊 Speech Processing
 │   │   ├── synthesizer.ts         # TTS orchestrator
 │   │   └── providers/
-│   │       └── openaiProvider.ts  # OpenAI TTS
+│   │       └── elevenLabsProvider.ts  # ElevenLabs TTS
 │   │
 │   └── utils/                  # 🔧 Utilities
 │       ├── logger.ts              # Console logging
@@ -201,7 +152,7 @@ apps/server/
 
 ---
 
-## TTS Architecture (OpenAI)
+## TTS Architecture (ElevenLabs)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -209,19 +160,19 @@ apps/server/
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   Configuration (.env)                                          │
-│   ├─ OPENAI_API_KEY: string                                    │
-│   ├─ TTS_VOICE: alloy|echo|fable|onyx|nova|shimmer             │
-│   ├─ TTS_MODEL: tts-1|tts-1-hd                                 │
-│   └─ TTS_RATE: 0.25-4.0                                        │
+│   ├─ ELEVENLABS_API_KEY: string                                │
+│   ├─ TTS_VOICE: rachel|adam|antoni|elli|josh|arnold|domi|bella │
+│   ├─ TTS_STABILITY: 0-1 (lower = more expressive)              │
+│   └─ TTS_SIMILARITY_BOOST: 0-1 (higher = more consistent)      │
 │                                                                 │
 │   ┌─────────────────────────────────────────────────────────┐   │
-│   │              OpenAI TTS Provider                        │   │
+│   │              ElevenLabs TTS Provider                    │   │
 │   │                                                         │   │
 │   │   Input: Text string                                    │   │
 │   │          │                                              │   │
 │   │          ▼                                              │   │
 │   │   ┌─────────────────┐                                   │   │
-│   │   │  OpenAI API     │  POST /v1/audio/speech           │   │
+│   │   │  ElevenLabs API │  POST /v1/text-to-speech/{id}    │   │
 │   │   │  (Cloud)        │  → Returns MP3 audio             │   │
 │   │   └────────┬────────┘                                   │   │
 │   │            │                                            │   │
@@ -234,12 +185,14 @@ apps/server/
 │   └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │   Voices:                                                       │
-│   ├─ alloy    - Neutral, balanced (female)                     │
-│   ├─ echo     - Warm, conversational (male)                    │
-│   ├─ fable    - Expressive, dramatic (male)                    │
-│   ├─ onyx     - Deep, authoritative (male)                     │
-│   ├─ nova     - Friendly, upbeat (female) ⭐ default           │
-│   └─ shimmer  - Clear, gentle (female)                         │
+│   ├─ rachel  - Calm, narrative (female)                        │
+│   ├─ adam    - Deep, authoritative (male) ⭐ default           │
+│   ├─ antoni  - Warm, friendly (male)                           │
+│   ├─ elli    - Young, cheerful (female)                        │
+│   ├─ josh    - Energetic (male)                                │
+│   ├─ arnold  - Crisp, clear (male)                             │
+│   ├─ domi    - Strong, confident (female)                      │
+│   └─ bella   - Soft, gentle (female)                           │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -286,10 +239,10 @@ apps/server/
 
 ```bash
 # .env file
-OPENAI_API_KEY=sk-proj-...     # Required for TTS
-TTS_VOICE=nova                  # Voice selection
-TTS_MODEL=tts-1                 # tts-1 or tts-1-hd
-TTS_RATE=1.0                    # Speed (0.25-4.0)
+ELEVENLABS_API_KEY=...         # Required for TTS
+TTS_VOICE=adam                  # Voice name
+TTS_STABILITY=0.5               # 0-1
+TTS_SIMILARITY_BOOST=0.75       # 0-1
 PORT=3001                       # Server port
 OLLAMA_HOST=http://localhost:11434
 OLLAMA_MODEL=llama3.2:3b
@@ -304,7 +257,7 @@ OLLAMA_MODEL=llama3.2:3b
 |------------|---------|--------------|
 | Node.js 18+ | Runtime | `brew install node` |
 | npm | Package manager | (included with Node.js) |
-| OpenAI API Key | TTS | [platform.openai.com](https://platform.openai.com) |
+| ElevenLabs API Key | TTS | [elevenlabs.io](https://elevenlabs.io) |
 
 ### Optional
 | Dependency | Purpose | Installation |
@@ -328,7 +281,7 @@ make web       # Frontend only
 |---------|------|
 | Server entry | `apps/server/src/index.ts` |
 | Main orchestrator | `apps/server/src/services/assistantService.ts` |
-| TTS Provider | `apps/server/src/speech/providers/openaiProvider.ts` |
+| TTS Provider | `apps/server/src/speech/providers/elevenLabsProvider.ts` |
 | WebSocket handlers | `apps/server/src/socket/handlers.ts` |
 | Frontend entry | `apps/web/app/page.tsx` |
 | Type definitions | `apps/server/src/core/types.ts` |
