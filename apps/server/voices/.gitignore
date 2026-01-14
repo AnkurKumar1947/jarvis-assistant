@@ -1,0 +1,10 @@
+# Piper voice models (large binary files)
+piper/*.onnx
+piper/*.onnx.json
+
+# Keep manifest
+!piper/manifest.json
+
+# Keep this gitignore
+!.gitignore
+

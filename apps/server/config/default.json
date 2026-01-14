@@ -1,0 +1,43 @@
+{
+  "assistant": {
+    "name": "Jarvis",
+    "wakeWord": "jarvis",
+    "language": "en-US"
+  },
+  "ollama": {
+    "host": "http://localhost:11434",
+    "model": "llama3.2:3b",
+    "timeout": 30000
+  },
+  "tts": {
+    "provider": "auto",
+    "voice": "en_GB-alan-medium",
+    "rate": 1.0,
+    "enabled": true,
+    "piper": {
+      "voicesPath": "./voices/piper",
+      "defaultVoice": "en_GB-alan-medium"
+    },
+    "macos": {
+      "defaultVoice": "Samantha",
+      "defaultRate": 200
+    }
+  },
+  "audio": {
+    "sampleRate": 16000,
+    "channels": 1,
+    "silenceThreshold": 2000,
+    "recordingTimeout": 10000
+  },
+  "logging": {
+    "level": "info",
+    "showTimestamp": true,
+    "colorized": true
+  },
+  "commands": {
+    "enableSystem": true,
+    "enableApps": true,
+    "enableMedia": true,
+    "enableUtilities": true
+  }
+}

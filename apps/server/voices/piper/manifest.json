@@ -1,0 +1,45 @@
+{
+  "voices": [
+    {
+      "id": "en_GB-alan-medium",
+      "name": "Alan",
+      "language": "en-GB",
+      "country": "United Kingdom",
+      "gender": "male",
+      "quality": "medium",
+      "sampleRate": 22050,
+      "description": "British male voice - Perfect for Jarvis"
+    },
+    {
+      "id": "en_GB-amy-medium",
+      "name": "Amy",
+      "language": "en-GB",
+      "country": "United Kingdom",
+      "gender": "female",
+      "quality": "medium",
+      "sampleRate": 22050,
+      "description": "British female voice"
+    },
+    {
+      "id": "en_US-ryan-medium",
+      "name": "Ryan",
+      "language": "en-US",
+      "country": "United States",
+      "gender": "male",
+      "quality": "medium",
+      "sampleRate": 22050,
+      "description": "American male voice"
+    },
+    {
+      "id": "en_US-lessac-medium",
+      "name": "Lessac",
+      "language": "en-US",
+      "country": "United States",
+      "gender": "female",
+      "quality": "medium",
+      "sampleRate": 22050,
+      "description": "American female voice - High quality"
+    }
+  ],
+  "defaultVoice": "en_GB-alan-medium"
+}
