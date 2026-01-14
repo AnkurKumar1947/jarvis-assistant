@@ -75,7 +75,7 @@ Jarvis is a **fully local** AI voice assistant for macOS, built with a modern mo
               │              ▼               │
               │  ┌────────────────────────┐  │
               │  │   Speech Synthesizer   │  │
-              │  │   (Piper / macOS TTS)  │  │
+              │  │      (Piper TTS)       │  │
               │  └────────────────────────┘  │
               └──────────────┬───────────────┘
                              │
@@ -207,7 +207,7 @@ apps/web/
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Real-time**: Socket.io
-- **TTS**: Piper (neural) / macOS native
+- **TTS**: Piper (neural voices)
 - **LLM**: Ollama (local)
 - **Audio**: Sox for recording
 
@@ -250,8 +250,7 @@ apps/server/
 │   │   ├── synthesizer.ts         # TTS orchestrator
 │   │   ├── transcriber.ts         # STT (speech-to-text)
 │   │   └── providers/
-│   │       ├── piperProvider.ts   # Piper neural TTS
-│   │       └── macosProvider.ts   # macOS native TTS
+│   │       └── piperProvider.ts   # Piper neural TTS
 │   │
 │   ├── audio/                  # 🎵 Audio Processing
 │   │   ├── index.ts               # Audio exports

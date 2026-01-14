@@ -3,7 +3,7 @@
  */
 
 import { Router, type Express } from 'express';
-import type { AssistantConfig, TTSProvider } from '../core/types.js';
+import type { AssistantConfig } from '../core/types.js';
 import { assistantService } from '../services/assistantService.js';
 import { metricsService } from '../services/metricsService.js';
 import { logger } from '../utils/logger.js';
@@ -24,11 +24,9 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
         state: assistantService.getState(),
       },
       tts: {
-        provider: voiceSettings.provider,
         voice: voiceSettings.voice,
         enabled: voiceSettings.enabled,
-        piperAvailable: voiceSettings.piperAvailable,
-        macosAvailable: voiceSettings.macosAvailable,
+        available: voiceSettings.available,
       },
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
@@ -95,12 +93,10 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
         language: config.assistant.language,
       },
       tts: {
-        provider: voiceSettings.provider,
         voice: voiceSettings.voice,
         rate: voiceSettings.rate,
         enabled: voiceSettings.enabled,
-        piperAvailable: voiceSettings.piperAvailable,
-        macosAvailable: voiceSettings.macosAvailable,
+        available: voiceSettings.available,
       },
     });
   });
@@ -109,11 +105,10 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
   // Voice Settings Routes
   // ============================================================================
 
-  // GET /api/voices - Get all available voices from all providers
+  // GET /api/voices - Get all available Piper voices
   router.get('/voices', async (req, res) => {
     try {
       const voices = await assistantService.getAvailableVoices();
-      const voicesByProvider = await assistantService.getVoicesByProvider();
       const voiceSettings = assistantService.getVoiceSettings();
       
       // Group by language/country
@@ -129,52 +124,13 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
       res.json({
         voices,
         grouped,
-        byProvider: voicesByProvider,
         total: voices.length,
-        currentProvider: voiceSettings.provider,
         currentVoice: voiceSettings.voice,
-        providers: {
-          piper: {
-            available: voiceSettings.piperAvailable,
-            voiceCount: voicesByProvider.piper?.length ?? 0,
-          },
-          macos: {
-            available: voiceSettings.macosAvailable,
-            voiceCount: voicesByProvider.macos?.length ?? 0,
-          },
-        },
+        available: voiceSettings.available,
       });
     } catch (error) {
       logger.error('Failed to get voices:', error);
       res.status(500).json({ error: 'Failed to get voices' });
-    }
-  });
-
-  // GET /api/voices/piper - Get Piper voices only
-  router.get('/voices/piper', async (req, res) => {
-    try {
-      const voicesByProvider = await assistantService.getVoicesByProvider();
-      res.json({
-        voices: voicesByProvider.piper,
-        total: voicesByProvider.piper?.length ?? 0,
-      });
-    } catch (error) {
-      logger.error('Failed to get Piper voices:', error);
-      res.status(500).json({ error: 'Failed to get Piper voices' });
-    }
-  });
-
-  // GET /api/voices/macos - Get macOS voices only
-  router.get('/voices/macos', async (req, res) => {
-    try {
-      const voicesByProvider = await assistantService.getVoicesByProvider();
-      res.json({
-        voices: voicesByProvider.macos,
-        total: voicesByProvider.macos?.length ?? 0,
-      });
-    } catch (error) {
-      logger.error('Failed to get macOS voices:', error);
-      res.status(500).json({ error: 'Failed to get macOS voices' });
     }
   });
 
@@ -215,20 +171,7 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
   // POST /api/settings/voice - Update voice settings
   router.post('/settings/voice', async (req, res) => {
     try {
-      const { provider, voice, rate, enabled } = req.body;
-
-      // Update provider first (if specified)
-      if (provider !== undefined) {
-        const validProviders: TTSProvider[] = ['auto', 'piper', 'macos'];
-        if (!validProviders.includes(provider)) {
-          res.status(400).json({ 
-            error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` 
-          });
-          return;
-        }
-        assistantService.setProvider(provider);
-        config.tts.provider = provider;
-      }
+      const { voice, rate, enabled } = req.body;
 
       // Update voice
       if (voice !== undefined) {
@@ -238,6 +181,10 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
 
       // Update rate
       if (rate !== undefined) {
+        if (rate < 0.5 || rate > 2.0) {
+          res.status(400).json({ error: 'Rate must be between 0.5 and 2.0' });
+          return;
+        }
         assistantService.setRate(rate);
         config.tts.rate = rate;
       }
@@ -249,7 +196,7 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
       }
 
       const newSettings = assistantService.getVoiceSettings();
-      logger.info(`Voice settings updated: provider=${newSettings.provider}, voice=${newSettings.voice}, rate=${newSettings.rate}, enabled=${newSettings.enabled}`);
+      logger.info(`Voice settings updated: voice=${newSettings.voice}, rate=${newSettings.rate}, enabled=${newSettings.enabled}`);
 
       res.json({
         success: true,
@@ -265,36 +212,6 @@ export function setupRoutes(app: Express, config: AssistantConfig): void {
   router.get('/settings/voice', (req, res) => {
     const settings = assistantService.getVoiceSettings();
     res.json(settings);
-  });
-
-  // POST /api/settings/provider - Switch TTS provider
-  router.post('/settings/provider', (req, res) => {
-    try {
-      const { provider } = req.body;
-
-      const validProviders: TTSProvider[] = ['auto', 'piper', 'macos'];
-      if (!provider || !validProviders.includes(provider)) {
-        res.status(400).json({ 
-          error: `Invalid provider. Must be one of: ${validProviders.join(', ')}` 
-        });
-        return;
-      }
-
-      assistantService.setProvider(provider);
-      config.tts.provider = provider;
-
-      const newSettings = assistantService.getVoiceSettings();
-      logger.info(`TTS provider switched to: ${provider}`);
-
-      res.json({
-        success: true,
-        provider: newSettings.provider,
-        voice: newSettings.voice,
-      });
-    } catch (error) {
-      logger.error('Failed to switch provider:', error);
-      res.status(500).json({ error: 'Failed to switch provider' });
-    }
   });
 
   // Mount router

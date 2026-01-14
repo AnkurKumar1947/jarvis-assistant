@@ -1,34 +1,28 @@
 /**
- * Speech Synthesizer - Multi-provider Text-to-Speech
- * Supports Piper (neural) and macOS (native) TTS with auto-detection
+ * Speech Synthesizer - Piper TTS
+ * High-quality neural text-to-speech using Piper
  */
 
 import { logger } from '../utils/logger.js';
 import { PiperProvider } from './providers/piperProvider.js';
-import { MacOSProvider } from './providers/macosProvider.js';
 import type { 
-  TTSProvider, 
   TTSConfig, 
   TTSProviderInterface, 
   VoiceInfo,
-  SpeechOptions 
 } from '../core/types.js';
 
 /**
- * Speech Synthesizer class with multi-provider support
+ * Speech Synthesizer class using Piper TTS
  */
 export class SpeechSynthesizer {
   private provider: TTSProviderInterface | null = null;
-  private currentProviderType: TTSProvider;
   private piperProvider: PiperProvider | null = null;
-  private macosProvider: MacOSProvider | null = null;
   private enabled: boolean;
   private ttsConfig: TTSConfig;
 
   constructor(config?: Partial<TTSConfig>) {
     // Default config
     this.ttsConfig = {
-      provider: config?.provider ?? 'auto',
       voice: config?.voice ?? 'en_GB-alan-medium',
       rate: config?.rate ?? 1.0,
       enabled: config?.enabled ?? true,
@@ -36,89 +30,41 @@ export class SpeechSynthesizer {
         voicesPath: './voices/piper',
         defaultVoice: 'en_GB-alan-medium',
       },
-      macos: config?.macos ?? {
-        defaultVoice: 'Samantha',
-        defaultRate: 200,
-      },
     };
 
     this.enabled = this.ttsConfig.enabled;
-    this.currentProviderType = this.ttsConfig.provider;
 
-    // Initialize providers
-    this.initializeProviders();
+    // Initialize Piper provider
+    this.initializeProvider();
   }
 
   /**
-   * Initialize TTS providers
+   * Initialize Piper TTS provider
    */
-  private initializeProviders(): void {
-    // Initialize Piper provider
+  private initializeProvider(): void {
     try {
       this.piperProvider = new PiperProvider(
         this.ttsConfig.piper?.voicesPath,
         this.ttsConfig.piper?.defaultVoice
       );
-    } catch (error) {
-      logger.debug('Failed to initialize Piper provider:', error);
-    }
-
-    // Initialize macOS provider
-    try {
-      this.macosProvider = new MacOSProvider(
-        this.ttsConfig.macos?.defaultVoice,
-        this.ttsConfig.macos?.defaultRate
-      );
-    } catch (error) {
-      logger.debug('Failed to initialize macOS provider:', error);
-    }
-
-    // Select active provider based on config
-    this.selectProvider();
-  }
-
-  /**
-   * Select the active provider based on configuration and availability
-   */
-  private selectProvider(): void {
-    if (this.currentProviderType === 'auto') {
-      // Auto-detect: prefer Piper if available, fallback to macOS
-      if (this.piperProvider?.isAvailable) {
+      
+      if (this.piperProvider.isAvailable) {
         this.provider = this.piperProvider;
         logger.info('🎙️ TTS Provider: Piper (neural voices)');
-      } else if (this.macosProvider?.isAvailable) {
-        this.provider = this.macosProvider;
-        logger.info('🎙️ TTS Provider: macOS (native voices)');
+        this.applySettings();
       } else {
         this.provider = null;
-        logger.warn('⚠️ No TTS provider available');
+        logger.warn('⚠️ Piper TTS not available - speech disabled');
+        logger.warn('  Run "make voices" to download voice models');
       }
-    } else if (this.currentProviderType === 'piper') {
-      if (this.piperProvider?.isAvailable) {
-        this.provider = this.piperProvider;
-        logger.info('🎙️ TTS Provider: Piper');
-      } else {
-        logger.warn('Piper requested but not available, falling back to macOS');
-        this.provider = this.macosProvider?.isAvailable ? this.macosProvider : null;
-      }
-    } else if (this.currentProviderType === 'macos') {
-      if (this.macosProvider?.isAvailable) {
-        this.provider = this.macosProvider;
-        logger.info('🎙️ TTS Provider: macOS');
-      } else {
-        logger.warn('macOS TTS requested but not available');
-        this.provider = null;
-      }
-    }
-
-    // Apply initial voice/rate settings
-    if (this.provider) {
-      this.applySettings();
+    } catch (error) {
+      logger.error('Failed to initialize Piper provider:', error);
+      this.provider = null;
     }
   }
 
   /**
-   * Apply current settings to active provider
+   * Apply current settings to provider
    */
   private applySettings(): void {
     if (!this.provider) return;
@@ -128,24 +74,14 @@ export class SpeechSynthesizer {
       this.provider.setVoice(this.ttsConfig.voice);
     }
 
-    // Apply rate setting (normalize for provider)
+    // Apply rate setting (Piper uses 0.5-2.0 scale)
     if (this.ttsConfig.rate !== undefined) {
-      if (this.provider.name === 'piper') {
-        // Piper uses 0.5-2.0 scale
-        this.provider.setRate(this.ttsConfig.rate);
-      } else if (this.provider.name === 'macos') {
-        // macOS uses WPM (words per minute), typically 150-300
-        // Convert from normalized rate if needed
-        const wpm = this.ttsConfig.rate <= 2.0 
-          ? Math.round(this.ttsConfig.rate * 200)  // Normalize from 0.5-2.0 to 100-400
-          : this.ttsConfig.rate;  // Already in WPM
-        this.provider.setRate(wpm);
-      }
+      this.provider.setRate(this.ttsConfig.rate);
     }
   }
 
   /**
-   * Speak text using the active provider
+   * Speak text using Piper
    */
   async speak(text: string): Promise<void> {
     if (!this.enabled) {
@@ -163,8 +99,7 @@ export class SpeechSynthesizer {
       return;
     }
 
-    const providerName = this.provider.name;
-    logger.info(`🔊 Speaking [${providerName}]: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+    logger.info(`🔊 Speaking: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
     
     const startTime = Date.now();
     
@@ -193,7 +128,7 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set voice (provider-specific voice ID)
+   * Set voice (Piper voice ID like "en_GB-alan-medium")
    */
   setVoice(voice: string): void {
     this.ttsConfig.voice = voice;
@@ -209,23 +144,12 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set speaking rate
-   * For Piper: 0.5-2.0 (1.0 = normal)
-   * For macOS: 50-500 WPM (200 = normal)
+   * Set speaking rate (0.5-2.0, where 1.0 is normal)
    */
   setRate(rate: number): void {
-    this.ttsConfig.rate = rate;
-    
-    if (this.provider) {
-      if (this.provider.name === 'macos' && rate <= 2.0) {
-        // Convert normalized rate to WPM for macOS
-        this.provider.setRate(Math.round(rate * 200));
-      } else {
-        this.provider.setRate(rate);
-      }
-    }
-    
-    logger.debug(`Speaking rate set to: ${rate}`);
+    this.ttsConfig.rate = Math.max(0.5, Math.min(2.0, rate));
+    this.provider?.setRate(this.ttsConfig.rate);
+    logger.debug(`Speaking rate set to: ${this.ttsConfig.rate}`);
   }
 
   /**
@@ -252,10 +176,10 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Get current provider type
+   * Check if Piper is available
    */
-  getProvider(): TTSProvider {
-    return this.provider?.name ?? 'auto';
+  isAvailable(): boolean {
+    return this.piperProvider?.isAvailable ?? false;
   }
 
   /**
@@ -266,96 +190,25 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Check if a specific provider is available
-   */
-  isProviderAvailable(provider: TTSProvider): boolean {
-    switch (provider) {
-      case 'piper':
-        return this.piperProvider?.isAvailable ?? false;
-      case 'macos':
-        return this.macosProvider?.isAvailable ?? false;
-      case 'auto':
-        return (this.piperProvider?.isAvailable || this.macosProvider?.isAvailable) ?? false;
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * Switch to a different provider
-   */
-  setProvider(provider: TTSProvider): void {
-    this.currentProviderType = provider;
-    this.ttsConfig.provider = provider;
-    this.selectProvider();
-  }
-
-  /**
-   * Get list of available voices from all providers
+   * Get list of available Piper voices
    */
   async getAvailableVoices(): Promise<VoiceInfo[]> {
-    const allVoices: VoiceInfo[] = [];
-
-    // Get Piper voices
-    if (this.piperProvider?.isAvailable) {
-      const piperVoices = await this.piperProvider.getAvailableVoices();
-      allVoices.push(...piperVoices);
+    if (!this.piperProvider?.isAvailable) {
+      return [];
     }
-
-    // Get macOS voices
-    if (this.macosProvider?.isAvailable) {
-      const macosVoices = await this.macosProvider.getAvailableVoices();
-      allVoices.push(...macosVoices);
-    }
-
-    return allVoices;
-  }
-
-  /**
-   * Get voices from current provider only
-   */
-  async getCurrentProviderVoices(): Promise<VoiceInfo[]> {
-    if (!this.provider) return [];
-    return this.provider.getAvailableVoices();
-  }
-
-  /**
-   * Get voices grouped by provider
-   */
-  async getVoicesByProvider(): Promise<Record<TTSProvider, VoiceInfo[]>> {
-    const result: Record<TTSProvider, VoiceInfo[]> = {
-      piper: [],
-      macos: [],
-      auto: [],
-    };
-
-    if (this.piperProvider?.isAvailable) {
-      result.piper = await this.piperProvider.getAvailableVoices();
-    }
-
-    if (this.macosProvider?.isAvailable) {
-      result.macos = await this.macosProvider.getAvailableVoices();
-    }
-
-    return result;
+    return this.piperProvider.getAvailableVoices();
   }
 
   /**
    * Test a voice
    */
   async testVoice(voice: string, rate: number, text?: string): Promise<void> {
-    // Stop any current speech
     await this.stop();
-
-    // Determine which provider to use based on voice format
-    const isPiperVoice = voice.match(/^[a-z]{2}_[A-Z]{2}-/);
     
-    if (isPiperVoice && this.piperProvider?.isAvailable) {
+    if (this.piperProvider?.isAvailable) {
       await this.piperProvider.testVoice(voice, rate, text);
-    } else if (this.macosProvider?.isAvailable) {
-      await this.macosProvider.testVoice(voice, rate, text);
-    } else if (this.provider) {
-      await this.provider.testVoice(voice, rate, text);
+    } else {
+      logger.warn('Cannot test voice - Piper not available');
     }
   }
 
@@ -364,21 +217,17 @@ export class SpeechSynthesizer {
    */
   getSessionInfo(): {
     provider: string;
-    providerAvailable: boolean;
+    available: boolean;
     voice: string;
     rate: number;
     enabled: boolean;
-    piperAvailable: boolean;
-    macosAvailable: boolean;
   } {
     return {
       provider: this.getActiveProviderName(),
-      providerAvailable: this.provider !== null,
+      available: this.isAvailable(),
       voice: this.getVoice(),
       rate: this.getRate(),
       enabled: this.enabled,
-      piperAvailable: this.piperProvider?.isAvailable ?? false,
-      macosAvailable: this.macosProvider?.isAvailable ?? false,
     };
   }
 }

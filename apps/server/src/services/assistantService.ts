@@ -8,9 +8,7 @@ import { EventEmitter } from 'events';
 import type { 
   AssistantConfig, 
   AssistantState, 
-  ConversationMessage,
   LLMMessage,
-  TTSProvider,
   VoiceInfo
 } from '../core/types.js';
 import { logger } from '../utils/logger.js';
@@ -403,57 +401,23 @@ Just tell me what you need!`;
     voice: string; 
     rate: number; 
     enabled: boolean;
-    provider: string;
-    piperAvailable: boolean;
-    macosAvailable: boolean;
+    available: boolean;
   } {
     const sessionInfo = this.synthesizer?.getSessionInfo();
     return {
       voice: this.synthesizer?.getVoice() ?? this.config?.tts.voice ?? 'en_GB-alan-medium',
       rate: this.synthesizer?.getRate() ?? this.config?.tts.rate ?? 1.0,
       enabled: this.synthesizer?.isEnabled() ?? this.config?.tts.enabled ?? true,
-      provider: sessionInfo?.provider ?? 'none',
-      piperAvailable: sessionInfo?.piperAvailable ?? false,
-      macosAvailable: sessionInfo?.macosAvailable ?? false,
+      available: sessionInfo?.available ?? false,
     };
   }
 
   /**
-   * Set TTS provider
-   */
-  setProvider(provider: TTSProvider): void {
-    if (this.synthesizer) {
-      this.synthesizer.setProvider(provider);
-    }
-    if (this.config) {
-      this.config.tts.provider = provider;
-    }
-    logger.info(`TTS provider changed to: ${provider}`);
-  }
-
-  /**
-   * Get TTS provider
-   */
-  getProvider(): TTSProvider {
-    return this.synthesizer?.getProvider() ?? this.config?.tts.provider ?? 'auto';
-  }
-
-  /**
-   * Get available voices from all providers
+   * Get available voices
    */
   async getAvailableVoices(): Promise<VoiceInfo[]> {
     if (!this.synthesizer) return [];
     return this.synthesizer.getAvailableVoices();
-  }
-
-  /**
-   * Get voices grouped by provider
-   */
-  async getVoicesByProvider(): Promise<Record<TTSProvider, VoiceInfo[]>> {
-    if (!this.synthesizer) {
-      return { piper: [], macos: [], auto: [] };
-    }
-    return this.synthesizer.getVoicesByProvider();
   }
 
   /**

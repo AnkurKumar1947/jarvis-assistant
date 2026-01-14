@@ -6,7 +6,7 @@ import { config as loadEnv } from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import type { AssistantConfig, DeepPartial, LogLevel, TTSProvider } from './types.js';
+import type { AssistantConfig, DeepPartial, LogLevel } from './types.js';
 
 // Get current directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -30,17 +30,12 @@ const DEFAULT_CONFIG: AssistantConfig = {
     timeout: 30000,
   },
   tts: {
-    provider: 'auto',
     voice: 'en_GB-alan-medium',
     rate: 1.0,
     enabled: true,
     piper: {
       voicesPath: './voices/piper',
       defaultVoice: 'en_GB-alan-medium',
-    },
-    macos: {
-      defaultVoice: 'Samantha',
-      defaultRate: 200,
     },
   },
   audio: {
@@ -130,17 +125,12 @@ function applyEnvOverrides(config: AssistantConfig): AssistantConfig {
       timeout: getEnvNumber('OLLAMA_TIMEOUT') ?? config.ollama.timeout,
     },
     tts: {
-      provider: (getEnv('TTS_PROVIDER') as TTSProvider) ?? config.tts.provider,
       voice: getEnv('TTS_VOICE') ?? config.tts.voice,
       rate: getEnvFloat('TTS_RATE') ?? config.tts.rate,
       enabled: getEnvBoolean('TTS_ENABLED') ?? config.tts.enabled,
       piper: {
         voicesPath: getEnv('TTS_PIPER_VOICES_PATH') ?? config.tts.piper?.voicesPath ?? './voices/piper',
         defaultVoice: getEnv('TTS_PIPER_DEFAULT_VOICE') ?? config.tts.piper?.defaultVoice ?? 'en_GB-alan-medium',
-      },
-      macos: {
-        defaultVoice: getEnv('TTS_MACOS_DEFAULT_VOICE') ?? config.tts.macos?.defaultVoice ?? 'Samantha',
-        defaultRate: getEnvNumber('TTS_MACOS_DEFAULT_RATE') ?? config.tts.macos?.defaultRate ?? 200,
       },
     },
     audio: {
@@ -207,18 +197,10 @@ function validateConfig(config: AssistantConfig): void {
     throw new Error('Wake word is required');
   }
 
-  // TTS rate validation - supports both Piper (0.5-2.0) and macOS (50-500) scales
+  // TTS rate validation - Piper uses 0.5-2.0 scale
   const rate = config.tts.rate;
-  const isNormalizedRate = rate >= 0.1 && rate <= 5.0;
-  const isWPMRate = rate >= 50 && rate <= 500;
-  if (!isNormalizedRate && !isWPMRate) {
-    throw new Error('TTS rate must be between 0.5-2.0 (normalized) or 50-500 (WPM)');
-  }
-
-  // Validate TTS provider
-  const validProviders: TTSProvider[] = ['auto', 'piper', 'macos'];
-  if (!validProviders.includes(config.tts.provider)) {
-    throw new Error(`TTS provider must be one of: ${validProviders.join(', ')}`);
+  if (rate < 0.5 || rate > 2.0) {
+    throw new Error('TTS rate must be between 0.5 and 2.0');
   }
 
   if (config.audio.sampleRate < 8000 || config.audio.sampleRate > 48000) {

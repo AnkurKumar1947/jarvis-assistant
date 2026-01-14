@@ -44,20 +44,13 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 // ============================================================================
 
 /**
- * Available TTS providers
- */
-export type TTSProvider = 'piper' | 'macos' | 'auto';
-
-/**
- * TTS configuration
+ * TTS configuration (Piper only)
  */
 export interface TTSConfig {
-  provider: TTSProvider;
   voice: string;
   rate: number;
   enabled: boolean;
   piper?: PiperConfig;
-  macos?: MacOSConfig;
 }
 
 /**
@@ -69,14 +62,6 @@ export interface PiperConfig {
 }
 
 /**
- * macOS TTS specific configuration
- */
-export interface MacOSConfig {
-  defaultVoice: string;
-  defaultRate: number;
-}
-
-/**
  * Voice information (unified across providers)
  */
 export interface VoiceInfo {
@@ -85,7 +70,7 @@ export interface VoiceInfo {
   language: string;
   country: string;
   gender: 'male' | 'female' | 'unknown';
-  provider: TTSProvider;
+  provider: 'piper';
   quality?: 'low' | 'medium' | 'high';
   sampleRate?: number;
   description?: string;
@@ -109,7 +94,7 @@ export interface PiperVoiceManifest {
  * TTS Provider interface for implementing different backends
  */
 export interface TTSProviderInterface {
-  readonly name: TTSProvider;
+  readonly name: 'piper';
   readonly isAvailable: boolean;
   
   speak(text: string): Promise<void>;

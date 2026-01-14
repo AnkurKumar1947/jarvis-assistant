@@ -36,11 +36,11 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📋 Requirements
 
-- **macOS** (for native TTS and system controls)
+- **macOS** (for system controls)
 - **Node.js 18+**
 - **sox** (for server-side audio): `brew install sox`
 - **Ollama** (optional, for AI): `brew install ollama`
-- **Piper** (optional, for neural TTS): `brew install piper`
+- **Piper voices** (for TTS): Run `make voices` to download
 
 ## 🏗️ Project Structure
 
@@ -158,25 +158,16 @@ cd apps/server
 | Ryan | `en_US-ryan-medium` | American male |
 | Lessac | `en_US-lessac-medium` | American female |
 
-### macOS Native TTS (Fallback)
-Uses the built-in macOS `say` command. Works out of the box, no setup required.
-
 ### TTS Configuration
 ```json
 {
   "tts": {
-    "provider": "auto",    // "auto", "piper", or "macos"
     "voice": "en_GB-alan-medium",
-    "rate": 1.0,           // 0.5-2.0 (Piper) or 50-500 WPM (macOS)
+    "rate": 1.0,           // 0.5-2.0 speed scale
     "enabled": true
   }
 }
 ```
-
-**Provider modes:**
-- `auto` - Use Piper if available, fallback to macOS
-- `piper` - Force Piper (fails if not installed)
-- `macos` - Use native macOS TTS
 
 ## 🔌 API Endpoints
 

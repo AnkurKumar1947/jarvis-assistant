@@ -10,17 +10,12 @@
     "timeout": 30000
   },
   "tts": {
-    "provider": "auto",
     "voice": "en_GB-alan-medium",
     "rate": 1.0,
     "enabled": true,
     "piper": {
       "voicesPath": "./voices/piper",
       "defaultVoice": "en_GB-alan-medium"
-    },
-    "macos": {
-      "defaultVoice": "Samantha",
-      "defaultRate": 200
     }
   },
   "audio": {

@@ -3,7 +3,7 @@
  * Exports speech synthesis and transcription functionality
  */
 
-// Synthesizer (TTS)
+// Synthesizer (TTS - Piper)
 export { SpeechSynthesizer, synthesizer } from './synthesizer.js';
 
 // Transcriber (STT)
@@ -11,11 +11,10 @@ export { SpeechTranscriber, getTranscriber, transcribeAudio } from './transcribe
 export type { WhisperModel } from './transcriber.js';
 
 // Providers
-export { PiperProvider, MacOSProvider } from './providers/index.js';
+export { PiperProvider } from './providers/index.js';
 
 // Re-export types
 export type { 
-  TTSProvider, 
   TTSConfig, 
   VoiceInfo, 
   TTSProviderInterface 
