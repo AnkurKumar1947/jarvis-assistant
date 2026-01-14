@@ -109,8 +109,32 @@ export class OpenAIProvider implements TTSProviderInterface {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`OpenAI TTS API error: ${response.status} - ${error}`);
+        const errorText = await response.text();
+        let errorMessage = `OpenAI TTS API error: ${response.status}`;
+        
+        // Parse and provide helpful error messages
+        try {
+          const errorJson = JSON.parse(errorText);
+          const apiError = errorJson.error?.message || errorText;
+          
+          if (response.status === 401) {
+            errorMessage = '❌ OpenAI API key is invalid. Check OPENAI_API_KEY in .env';
+          } else if (response.status === 429) {
+            errorMessage = '❌ OpenAI rate limit exceeded. Please wait and try again.';
+          } else if (response.status === 402 || apiError.includes('quota') || apiError.includes('billing')) {
+            errorMessage = '❌ OpenAI account has no credits. Add billing at platform.openai.com/settings/organization/billing';
+            this._isAvailable = false; // Disable TTS to prevent repeated failures
+          } else if (response.status === 500) {
+            errorMessage = '❌ OpenAI server error. Try again later.';
+          } else {
+            errorMessage = `❌ OpenAI TTS error: ${apiError}`;
+          }
+        } catch {
+          errorMessage = `❌ OpenAI TTS error: ${response.status} - ${errorText}`;
+        }
+        
+        logger.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       // Get audio buffer

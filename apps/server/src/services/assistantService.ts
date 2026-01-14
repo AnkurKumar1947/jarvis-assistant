@@ -192,7 +192,13 @@ class AssistantService extends EventEmitter {
       try {
         await this.synthesizer.speak(response);
       } catch (error) {
-        logger.debug('TTS error:', error);
+        // Log TTS errors but don't crash - response still works via text
+        const errorMsg = error instanceof Error ? error.message : 'Unknown TTS error';
+        if (errorMsg.includes('credits') || errorMsg.includes('billing')) {
+          logger.warn('TTS disabled - add credits at platform.openai.com');
+        } else {
+          logger.warn(`TTS error: ${errorMsg}`);
+        }
       }
     }
     

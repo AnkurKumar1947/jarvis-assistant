@@ -12,8 +12,27 @@ import type { AssistantConfig, DeepPartial, LogLevel } from './types.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env file
-loadEnv();
+// Load .env file from multiple possible locations
+const envPaths = [
+  resolve(__dirname, '../../../../.env'),      // Project root (from src/core/)
+  resolve(__dirname, '../../../.env'),         // apps/server/.env
+  resolve(process.cwd(), '.env'),              // Current working directory
+  resolve(process.cwd(), '../../.env'),        // Project root from apps/server
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  if (existsSync(envPath)) {
+    loadEnv({ path: envPath });
+    envLoaded = true;
+    console.log(`✅ Loaded .env from: ${envPath}`);
+    break;
+  }
+}
+
+if (!envLoaded) {
+  console.warn('⚠️  No .env file found. Run "make setup-env" in project root.');
+}
 
 /**
  * Default configuration (inline fallback)
