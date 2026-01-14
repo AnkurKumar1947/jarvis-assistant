@@ -3,7 +3,7 @@
 # ║                        Makefile                               ║
 # ╚═══════════════════════════════════════════════════════════════╝
 
-.PHONY: all install dev start stop server web clean help voices check status restart build
+.PHONY: all install dev start stop server web clean help check status restart build
 
 # Directories
 SERVER_DIR := apps/server
@@ -33,7 +33,7 @@ install-web: ## Install web dependencies only
 # Development
 # ─────────────────────────────────────────────────────────────────
 
-dev: check-deps ## Start both server and web in development mode
+dev: check-deps check-env ## Start both server and web in development mode
 	@echo ""
 	@echo "╔═══════════════════════════════════════════════════════════════╗"
 	@echo "║                    🤖 JARVIS ASSISTANT                        ║"
@@ -114,12 +114,37 @@ clean-build: ## Clean only build artifacts (keep node_modules)
 	@echo "✅ Build artifacts cleaned!"
 
 # ─────────────────────────────────────────────────────────────────
-# Voice Models
+# Environment Setup
 # ─────────────────────────────────────────────────────────────────
 
-voices: ## Download Piper voice models
-	@echo "🎙️ Downloading voice models..."
-	@cd $(SERVER_DIR) && ./scripts/download-piper-voices.sh
+setup-env: ## Create .env file from template
+	@if [ ! -f .env ]; then \
+		echo "# JARVIS Assistant Configuration" > .env; \
+		echo "" >> .env; \
+		echo "# OpenAI API Key (Required for TTS)" >> .env; \
+		echo "OPENAI_API_KEY=sk-proj-your-key-here" >> .env; \
+		echo "" >> .env; \
+		echo "# TTS Configuration" >> .env; \
+		echo "TTS_VOICE=nova" >> .env; \
+		echo "TTS_MODEL=tts-1" >> .env; \
+		echo "" >> .env; \
+		echo "# Server Configuration" >> .env; \
+		echo "PORT=3001" >> .env; \
+		echo "NODE_ENV=development" >> .env; \
+		echo "✅ Created .env file - add your OPENAI_API_KEY"; \
+	else \
+		echo "⚠️  .env file already exists"; \
+	fi
+
+check-env: ## Check if .env is configured
+	@if [ ! -f .env ]; then \
+		echo "⚠️  No .env file found. Run 'make setup-env' first"; \
+		exit 1; \
+	fi
+	@if ! grep -q "OPENAI_API_KEY=sk-" .env 2>/dev/null || grep -q "your-key-here" .env 2>/dev/null; then \
+		echo "⚠️  OPENAI_API_KEY not configured in .env"; \
+		echo "   TTS will be disabled until you add your API key"; \
+	fi
 
 # ─────────────────────────────────────────────────────────────────
 # Checks & Status
@@ -130,9 +155,19 @@ check: ## Check system requirements
 	@echo ""
 	@printf "  Node.js:  "; node -v 2>/dev/null || echo "❌ NOT FOUND"
 	@printf "  npm:      v"; npm -v 2>/dev/null || echo "❌ NOT FOUND"
-	@printf "  sox:      "; sox --version 2>/dev/null | head -1 || echo "⚠️  not found (optional)"
-	@printf "  piper:    "; piper --version 2>/dev/null || echo "⚠️  not found (optional)"
 	@printf "  ollama:   "; ollama --version 2>/dev/null || echo "⚠️  not found (optional)"
+	@echo ""
+	@echo "📋 Environment:"
+	@if [ -f .env ]; then \
+		echo "  .env file: ✅ exists"; \
+		if grep -q "OPENAI_API_KEY=sk-" .env 2>/dev/null && ! grep -q "your-key-here" .env 2>/dev/null; then \
+			echo "  OpenAI:    ✅ configured"; \
+		else \
+			echo "  OpenAI:    ⚠️  not configured"; \
+		fi \
+	else \
+		echo "  .env file: ❌ missing (run 'make setup-env')"; \
+	fi
 	@echo ""
 
 check-deps: ## Ensure dependencies are installed
@@ -175,12 +210,17 @@ help: ## Show this help message
 	@echo "╔═══════════════════════════════════════════════════════════════╗"
 	@echo "║                    🤖 JARVIS ASSISTANT                        ║"
 	@echo "╠═══════════════════════════════════════════════════════════════╣"
-	@echo "║  Usage: make [target]                                        ║"
+	@echo "║  TTS: OpenAI (cloud-based, requires API key)                 ║"
 	@echo "╚═══════════════════════════════════════════════════════════════╝"
 	@echo ""
 	@echo "Commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  1. make setup-env     # Create .env file"
+	@echo "  2. Edit .env          # Add your OPENAI_API_KEY"
+	@echo "  3. make               # Start the assistant"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make              # Start both server and web"

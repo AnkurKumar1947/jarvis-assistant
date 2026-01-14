@@ -1,46 +1,47 @@
 # 🤖 Jarvis Assistant
 
-A personal AI assistant for macOS with a modern web UI, inspired by Iron Man's Jarvis.
+A personal AI assistant with a modern web UI, inspired by Iron Man's Jarvis.
 
 ## ✨ Features
 
 - 🌐 **Web UI** - Beautiful dark-mode dashboard with real-time updates
-- 🎤 **Voice Input** - Browser-based voice commands (+ optional wake word)
+- 🎤 **Voice Input** - Browser-based voice commands
 - ⌨️ **Text Input** - Chat interface for typing commands
-- 🔊 **Neural TTS** - High-quality Piper voices (British male default) + macOS fallback
+- 🔊 **OpenAI TTS** - High-quality cloud-based text-to-speech (6 voices)
 - 📊 **System Metrics** - Real-time CPU, RAM, disk, battery monitoring
-- 📹 **Camera Feed** - Live camera display (visual only)
+- 📹 **Camera Feed** - Live camera display
 - 🤖 **AI Integration** - Ollama LLM for intelligent responses
-- 🏠 **Fully Local** - Works offline (after initial setup)
 
 ## 🚀 Quick Start
 
 ```bash
-# Navigate to project
-cd jarvis-assistant
+# 1. Setup environment
+make setup-env
 
-# Install server dependencies
-cd apps/server
-npm install
+# 2. Add your OpenAI API key to .env
+# Edit .env and replace sk-proj-your-key-here with your actual key
 
-# Start the backend server
-npm run dev
-
-# In another terminal, start the frontend
-cd apps/web
-npm install
-npm run dev
+# 3. Start the assistant
+make
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 📋 Requirements
 
-- **macOS** (for system controls)
 - **Node.js 18+**
-- **sox** (for server-side audio): `brew install sox`
-- **Ollama** (optional, for AI): `brew install ollama`
-- **Piper voices** (for TTS): Run `make voices` to download
+- **OpenAI API Key** (for TTS) - [Get one here](https://platform.openai.com/api-keys)
+- **Ollama** (optional, for AI responses): `brew install ollama`
+
+## 🔑 Setup OpenAI API Key
+
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Add it to your `.env` file:
+
+```bash
+OPENAI_API_KEY=sk-proj-your-actual-key-here
+```
 
 ## 🏗️ Project Structure
 
@@ -49,15 +50,14 @@ jarvis-assistant/
 ├── apps/
 │   ├── server/                 # 🖥️ Backend (Express + Socket.io)
 │   │   ├── src/
-│   │   │   ├── audio/          # Recording, playback, wake word
-│   │   │   ├── brain/          # LLM, intent parsing, memory
+│   │   │   ├── brain/          # LLM, intent parsing
 │   │   │   ├── commands/       # System, apps, media, utilities
 │   │   │   ├── core/           # Types, config
 │   │   │   ├── routes/         # REST API
 │   │   │   ├── services/       # Assistant, metrics
 │   │   │   ├── socket/         # WebSocket handlers
-│   │   │   ├── speech/         # STT, TTS
-│   │   │   ├── utils/          # Logger, macOS, sounds
+│   │   │   ├── speech/         # OpenAI TTS
+│   │   │   ├── utils/          # Logger, macOS helpers
 │   │   │   └── index.ts        # Entry point
 │   │   └── config/
 │   │       └── default.json    # Configuration
@@ -65,16 +65,12 @@ jarvis-assistant/
 │   └── web/                    # 🌐 Frontend (Next.js + React)
 │       ├── app/                # Next.js app router
 │       ├── components/         # UI components
-│       │   ├── assistant/      # Assistant panel
-│       │   ├── camera/         # Camera feed
-│       │   ├── chat/           # Chat interface
-│       │   ├── metrics/        # System metrics
-│       │   ├── settings/       # Settings dialog
-│       │   └── ui/             # Base UI components
 │       ├── hooks/              # Custom React hooks
 │       ├── stores/             # Zustand state stores
 │       └── lib/                # Utilities
 │
+├── .env                        # Environment variables (API keys)
+├── Makefile                    # Development commands
 └── README.md
 ```
 
@@ -107,9 +103,40 @@ jarvis-assistant/
 |---------|-------------|
 | `what time is it` | Current time |
 | `what's the date` | Current date |
-| `search for documents` | File search |
 | `calculate 15 * 8` | Math operations |
 | `help` | Show all commands |
+
+## 🎙️ OpenAI TTS Voices
+
+Jarvis uses OpenAI's text-to-speech API with 6 available voices:
+
+| Voice | Gender | Description |
+|-------|--------|-------------|
+| **nova** ⭐ | Female | Friendly and upbeat (default) |
+| alloy | Female | Neutral and balanced |
+| echo | Male | Warm and conversational |
+| fable | Male | Expressive and dramatic |
+| onyx | Male | Deep and authoritative |
+| shimmer | Female | Clear and gentle |
+
+### TTS Configuration
+
+Edit `.env` to change voice settings:
+
+```bash
+TTS_VOICE=nova          # Voice: alloy, echo, fable, onyx, nova, shimmer
+TTS_MODEL=tts-1         # Model: tts-1 (faster) or tts-1-hd (higher quality)
+TTS_RATE=1.0            # Speed: 0.25 to 4.0
+```
+
+### TTS Pricing
+
+| Model | Cost |
+|-------|------|
+| tts-1 (Standard) | $0.015 / 1,000 characters |
+| tts-1-hd (HD) | $0.030 / 1,000 characters |
+
+**Example**: 1000 assistant responses averaging 100 characters = ~$1.50
 
 ## ⚙️ Configuration
 
@@ -126,45 +153,13 @@ Edit `apps/server/config/default.json`:
     "model": "llama3.2:3b"
   },
   "tts": {
-    "provider": "auto",
-    "voice": "en_GB-alan-medium",
+    "voice": "nova",
     "rate": 1.0,
-    "enabled": true
-  }
-}
-```
-
-## 🎙️ Text-to-Speech (TTS)
-
-Jarvis supports two TTS providers:
-
-### Piper TTS (Neural Voices) - Recommended
-High-quality neural voices that run locally. Perfect for a Jarvis-like experience.
-
-```bash
-# Install Piper
-brew install piper
-
-# Download neural voice models
-cd apps/server
-./scripts/download-piper-voices.sh
-```
-
-**Available voices:**
-| Voice | ID | Description |
-|-------|-----|-------------|
-| Alan 🎯 | `en_GB-alan-medium` | British male (default) |
-| Amy | `en_GB-amy-medium` | British female |
-| Ryan | `en_US-ryan-medium` | American male |
-| Lessac | `en_US-lessac-medium` | American female |
-
-### TTS Configuration
-```json
-{
-  "tts": {
-    "voice": "en_GB-alan-medium",
-    "rate": 1.0,           // 0.5-2.0 speed scale
-    "enabled": true
+    "enabled": true,
+    "openai": {
+      "model": "tts-1",
+      "defaultVoice": "nova"
+    }
   }
 }
 ```
@@ -178,12 +173,9 @@ cd apps/server
 | `/api/metrics` | GET | System metrics |
 | `/api/message` | POST | Send message |
 | `/api/history` | GET | Message history |
-| `/api/voices` | GET | Get all available voices |
-| `/api/voices/piper` | GET | Get Piper voices only |
-| `/api/voices/macos` | GET | Get macOS voices only |
+| `/api/voices` | GET | Available TTS voices |
 | `/api/voices/test` | POST | Test a voice |
-| `/api/settings/voice` | GET/POST | Get/update voice settings |
-| `/api/settings/provider` | POST | Switch TTS provider |
+| `/api/settings/voice` | GET/POST | Voice settings |
 
 ## 🔄 Socket Events
 
@@ -194,28 +186,18 @@ cd apps/server
 | `assistant:state` | Server → Client | State updates |
 | `metrics:update` | Server → Client | System metrics |
 
-## 🎨 Themes
-
-The UI supports multiple themes:
-- **Dark** (default) - Sleek dark mode
-- **Light** - Clean light mode  
-- **Midnight** - Deep blue dark
-- **Cyberpunk** - Neon accents
-
-## 🛠️ Development
+## 🛠️ Makefile Commands
 
 ```bash
-# Server (backend)
-cd apps/server
-npm run dev          # Watch mode
-npm run build        # Build for production
-npm start            # Run production build
-
-# Web (frontend)
-cd apps/web
-npm run dev          # Development server
-npm run build        # Build for production
-npm start            # Run production build
+make              # Start both server and web
+make server       # Start backend only
+make web          # Start frontend only
+make stop         # Stop all services
+make status       # Check running services
+make setup-env    # Create .env file
+make check        # Check requirements
+make build        # Production build
+make clean        # Clean node_modules
 ```
 
 ## 📝 Roadmap
@@ -224,13 +206,11 @@ npm start            # Run production build
 - [x] System commands (volume, apps, media)
 - [x] Socket.io communication
 - [x] System metrics monitoring
-- [x] Command registry
 - [x] LLM integration (Ollama)
-- [x] Neural TTS (Piper) with British voice
+- [x] OpenAI TTS
 - [ ] Voice input in browser
 - [ ] Camera processing/analysis
 - [ ] Smart home integration
-- [ ] Mobile companion app
 
 ## 📄 License
 

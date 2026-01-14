@@ -40,29 +40,40 @@ export interface AssistantConfig {
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 // ============================================================================
-// TTS Provider Types
+// TTS Provider Types (OpenAI Only)
 // ============================================================================
 
 /**
- * TTS configuration (Piper only)
+ * OpenAI TTS voice options
+ */
+export type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+
+/**
+ * OpenAI TTS model options
+ */
+export type OpenAIModel = 'tts-1' | 'tts-1-hd';
+
+/**
+ * TTS configuration (OpenAI)
  */
 export interface TTSConfig {
   voice: string;
   rate: number;
   enabled: boolean;
-  piper?: PiperConfig;
+  openai?: OpenAIConfig;
 }
 
 /**
- * Piper TTS specific configuration
+ * OpenAI TTS specific configuration
  */
-export interface PiperConfig {
-  voicesPath: string;
-  defaultVoice: string;
+export interface OpenAIConfig {
+  apiKey: string;
+  model: OpenAIModel;
+  defaultVoice: OpenAIVoice;
 }
 
 /**
- * Voice information (unified across providers)
+ * Voice information
  */
 export interface VoiceInfo {
   id: string;
@@ -70,31 +81,16 @@ export interface VoiceInfo {
   language: string;
   country: string;
   gender: 'male' | 'female' | 'unknown';
-  provider: 'piper';
+  provider: 'openai';
   quality?: 'low' | 'medium' | 'high';
-  sampleRate?: number;
   description?: string;
 }
 
 /**
- * Piper voice manifest entry
- */
-export interface PiperVoiceManifest {
-  id: string;
-  name: string;
-  language: string;
-  country: string;
-  gender: 'male' | 'female';
-  quality: 'low' | 'medium' | 'high';
-  sampleRate: number;
-  description?: string;
-}
-
-/**
- * TTS Provider interface for implementing different backends
+ * TTS Provider interface
  */
 export interface TTSProviderInterface {
-  readonly name: 'piper';
+  readonly name: 'openai';
   readonly isAvailable: boolean;
   
   speak(text: string): Promise<void>;

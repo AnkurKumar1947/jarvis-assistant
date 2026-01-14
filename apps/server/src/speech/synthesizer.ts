@@ -1,64 +1,69 @@
 /**
- * Speech Synthesizer - Piper TTS
- * High-quality neural text-to-speech using Piper
+ * Speech Synthesizer - OpenAI TTS
+ * High-quality cloud-based text-to-speech
  */
 
 import { logger } from '../utils/logger.js';
-import { PiperProvider } from './providers/piperProvider.js';
+import { OpenAIProvider } from './providers/openaiProvider.js';
 import type { 
   TTSConfig, 
-  TTSProviderInterface, 
   VoiceInfo,
 } from '../core/types.js';
 
 /**
- * Speech Synthesizer class using Piper TTS
+ * Speech Synthesizer class using OpenAI TTS
  */
 export class SpeechSynthesizer {
-  private provider: TTSProviderInterface | null = null;
-  private piperProvider: PiperProvider | null = null;
+  private provider: OpenAIProvider | null = null;
   private enabled: boolean;
   private ttsConfig: TTSConfig;
 
   constructor(config?: Partial<TTSConfig>) {
     // Default config
     this.ttsConfig = {
-      voice: config?.voice ?? 'en_GB-alan-medium',
+      voice: config?.voice ?? 'nova',
       rate: config?.rate ?? 1.0,
       enabled: config?.enabled ?? true,
-      piper: config?.piper ?? {
-        voicesPath: './voices/piper',
-        defaultVoice: 'en_GB-alan-medium',
+      openai: config?.openai ?? {
+        apiKey: process.env.OPENAI_API_KEY ?? '',
+        model: 'tts-1',
+        defaultVoice: 'nova',
       },
     };
 
     this.enabled = this.ttsConfig.enabled;
 
-    // Initialize Piper provider
+    // Initialize OpenAI provider
     this.initializeProvider();
   }
 
   /**
-   * Initialize Piper TTS provider
+   * Initialize OpenAI TTS provider
    */
   private initializeProvider(): void {
+    if (!this.ttsConfig.openai?.apiKey) {
+      logger.warn('⚠️ OpenAI API key not configured - TTS disabled');
+      logger.warn('  Set OPENAI_API_KEY in your .env file');
+      this.provider = null;
+      return;
+    }
+
     try {
-      this.piperProvider = new PiperProvider(
-        this.ttsConfig.piper?.voicesPath,
-        this.ttsConfig.piper?.defaultVoice
-      );
-      
-      if (this.piperProvider.isAvailable) {
-        this.provider = this.piperProvider;
-        logger.info('🎙️ TTS Provider: Piper (neural voices)');
+      this.provider = new OpenAIProvider({
+        apiKey: this.ttsConfig.openai.apiKey,
+        model: this.ttsConfig.openai.model,
+        defaultVoice: this.ttsConfig.openai.defaultVoice,
+      });
+
+      if (this.provider.isAvailable) {
+        logger.info('🎙️ TTS Provider: OpenAI (cloud)');
         this.applySettings();
       } else {
+        logger.warn('⚠️ OpenAI TTS not available - check API key');
         this.provider = null;
-        logger.warn('⚠️ Piper TTS not available - speech disabled');
-        logger.warn('  Run "make voices" to download voice models');
       }
     } catch (error) {
-      logger.error('Failed to initialize Piper provider:', error);
+      logger.error('Failed to initialize OpenAI provider:', error);
       this.provider = null;
     }
   }
@@ -74,14 +79,14 @@ export class SpeechSynthesizer {
       this.provider.setVoice(this.ttsConfig.voice);
     }
 
-    // Apply rate setting (Piper uses 0.5-2.0 scale)
+    // Apply rate setting
     if (this.ttsConfig.rate !== undefined) {
       this.provider.setRate(this.ttsConfig.rate);
     }
   }
 
   /**
-   * Speak text using Piper
+   * Speak text using OpenAI TTS
    */
   async speak(text: string): Promise<void> {
     if (!this.enabled) {
@@ -95,7 +100,7 @@ export class SpeechSynthesizer {
     }
 
     if (!this.provider) {
-      logger.warn('No TTS provider available');
+      logger.warn('No TTS provider available - set OPENAI_API_KEY');
       return;
     }
 
@@ -128,7 +133,7 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set voice (Piper voice ID like "en_GB-alan-medium")
+   * Set voice (alloy, echo, fable, onyx, nova, shimmer)
    */
   setVoice(voice: string): void {
     this.ttsConfig.voice = voice;
@@ -144,10 +149,10 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Set speaking rate (0.5-2.0, where 1.0 is normal)
+   * Set speaking rate (0.25-4.0, where 1.0 is normal)
    */
   setRate(rate: number): void {
-    this.ttsConfig.rate = Math.max(0.5, Math.min(2.0, rate));
+    this.ttsConfig.rate = Math.max(0.25, Math.min(4.0, rate));
     this.provider?.setRate(this.ttsConfig.rate);
     logger.debug(`Speaking rate set to: ${this.ttsConfig.rate}`);
   }
@@ -176,10 +181,10 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Check if Piper is available
+   * Check if OpenAI is available
    */
   isAvailable(): boolean {
-    return this.piperProvider?.isAvailable ?? false;
+    return this.provider?.isAvailable ?? false;
   }
 
   /**
@@ -190,13 +195,13 @@ export class SpeechSynthesizer {
   }
 
   /**
-   * Get list of available Piper voices
+   * Get list of available voices
    */
   async getAvailableVoices(): Promise<VoiceInfo[]> {
-    if (!this.piperProvider?.isAvailable) {
+    if (!this.provider?.isAvailable) {
       return [];
     }
-    return this.piperProvider.getAvailableVoices();
+    return this.provider.getAvailableVoices();
   }
 
   /**
@@ -205,10 +210,10 @@ export class SpeechSynthesizer {
   async testVoice(voice: string, rate: number, text?: string): Promise<void> {
     await this.stop();
     
-    if (this.piperProvider?.isAvailable) {
-      await this.piperProvider.testVoice(voice, rate, text);
+    if (this.provider?.isAvailable) {
+      await this.provider.testVoice(voice, rate, text);
     } else {
-      logger.warn('Cannot test voice - Piper not available');
+      logger.warn('Cannot test voice - OpenAI not available');
     }
   }
 

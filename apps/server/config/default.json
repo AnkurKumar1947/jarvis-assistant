@@ -10,12 +10,12 @@
     "timeout": 30000
   },
   "tts": {
-    "voice": "en_GB-alan-medium",
+    "voice": "nova",
     "rate": 1.0,
     "enabled": true,
-    "piper": {
-      "voicesPath": "./voices/piper",
-      "defaultVoice": "en_GB-alan-medium"
+    "openai": {
+      "model": "tts-1",
+      "defaultVoice": "nova"
     }
   },
   "audio": {

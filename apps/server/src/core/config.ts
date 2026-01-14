@@ -30,12 +30,13 @@ const DEFAULT_CONFIG: AssistantConfig = {
     timeout: 30000,
   },
   tts: {
-    voice: 'en_GB-alan-medium',
+    voice: 'nova',
     rate: 1.0,
     enabled: true,
-    piper: {
-      voicesPath: './voices/piper',
-      defaultVoice: 'en_GB-alan-medium',
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY ?? '',
+      model: 'tts-1',
+      defaultVoice: 'nova',
     },
   },
   audio: {
@@ -128,9 +129,10 @@ function applyEnvOverrides(config: AssistantConfig): AssistantConfig {
       voice: getEnv('TTS_VOICE') ?? config.tts.voice,
       rate: getEnvFloat('TTS_RATE') ?? config.tts.rate,
       enabled: getEnvBoolean('TTS_ENABLED') ?? config.tts.enabled,
-      piper: {
-        voicesPath: getEnv('TTS_PIPER_VOICES_PATH') ?? config.tts.piper?.voicesPath ?? './voices/piper',
-        defaultVoice: getEnv('TTS_PIPER_DEFAULT_VOICE') ?? config.tts.piper?.defaultVoice ?? 'en_GB-alan-medium',
+      openai: {
+        apiKey: getEnv('OPENAI_API_KEY') ?? config.tts.openai?.apiKey ?? '',
+        model: (getEnv('TTS_MODEL') as 'tts-1' | 'tts-1-hd') ?? config.tts.openai?.model ?? 'tts-1',
+        defaultVoice: (getEnv('TTS_VOICE') as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer') ?? config.tts.openai?.defaultVoice ?? 'nova',
       },
     },
     audio: {
@@ -197,10 +199,16 @@ function validateConfig(config: AssistantConfig): void {
     throw new Error('Wake word is required');
   }
 
-  // TTS rate validation - Piper uses 0.5-2.0 scale
+  // TTS rate validation - OpenAI uses 0.25-4.0
   const rate = config.tts.rate;
-  if (rate < 0.5 || rate > 2.0) {
-    throw new Error('TTS rate must be between 0.5 and 2.0');
+  if (rate < 0.25 || rate > 4.0) {
+    throw new Error('TTS rate must be between 0.25 and 4.0');
+  }
+
+  // TTS voice validation
+  const validVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+  if (!validVoices.includes(config.tts.voice)) {
+    throw new Error(`TTS voice must be one of: ${validVoices.join(', ')}`);
   }
 
   if (config.audio.sampleRate < 8000 || config.audio.sampleRate > 48000) {
